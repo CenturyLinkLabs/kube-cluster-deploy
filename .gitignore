@@ -1,0 +1,6 @@
+.env
+.vagrant/*
+.idea/*
+.DS_Store
+*.iml
+*/.idea/*

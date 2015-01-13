@@ -1,0 +1,9 @@
+export USERNAME=******
+export CPU=2
+export MEMORY_GB=2
+export PASSWORD=*****
+export REGION=WA1
+export GROUP_ID=wa1-35572
+export NETWORK_NAME=test
+export SERVER_COUNT=2
+export REMOTE_TARGET_NAME=KuberTest
