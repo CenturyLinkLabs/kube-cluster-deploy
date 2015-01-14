@@ -16,5 +16,5 @@ func New(providerType string) CloudProvider {
 }
 
 type Params struct {
-	Count int
+	MinionCount int
 }

@@ -30,9 +30,9 @@ func (clc CenturyLink) ProvisionCluster(params Params) []Server {
 	println("\nProvisioning Server Cluster in Centurylink")
 	clc.initProvider()
 
-	println("Deploying ", params.Count, " Servers")
+	println("Deploying ", params.MinionCount, " Servers")
 	var servers []Server
-	for i := 0; i < params.Count; i++ {
+	for i := 0; i < params.MinionCount+1; i++ {
 		println("Deploying server ", i+1)
 		s := clc.createServer(i + 1)
 		servers = append(servers, s)

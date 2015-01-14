@@ -30,6 +30,6 @@ func setKey(key string, value string) {
 			fmt.Println(err)
 		}
 	} else {
-		fmt.Printf("\n----BEGIN PANAMXAX DATA----%s=%s----END PANAMAX DATA----", key, value)
+		fmt.Printf("\n----BEGIN PANAMAX DATA----\n%s=%s\n----END PANAMAX DATA----\n", key, value)
 	}
 }
