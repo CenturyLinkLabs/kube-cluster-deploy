@@ -44,8 +44,8 @@ func main() {
 		}
 	}
 
-	utils.SetKey("$MASTER_PUBLIC_IP", mIP)
-	utils.SetKey("$MASTER_PRIVATE_IP", mPrIP)
+	utils.SetKey("MASTER_PUBLIC_IP", mIP)
+	utils.SetKey("MASTER_PRIVATE_IP", mPrIP)
 	utils.SetKey("MASTER_PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte(mPK)))
 	utils.SetKey("MINION_IPS", strings.Join(miIP, ","))
 }

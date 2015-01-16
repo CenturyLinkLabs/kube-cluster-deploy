@@ -47,6 +47,10 @@
     {
       "name": "Step 2",
       "source": "cakk/kuberup"
+    },
+    {
+      "name": "Step 2",
+      "source": "cakk/agent"
     }
   ]
 }
