@@ -1,47 +1,48 @@
 {
   "name": "kubernetes",
+  "environment": [
+    {
+      "variable": "USERNAME",
+      "value": "cakkineni"
+    },
+    {
+      "variable": "CPU",
+      "value": "2"
+    },
+    {
+      "variable": "MEMORY_GB",
+      "value": "2"
+    },
+    {
+      "variable": "PASSWORD",
+      "value": "Svvs12345~"
+    },
+    {
+      "variable": "REGION",
+      "value": "WA1"
+    },
+    {
+      "variable": "GROUP_ID",
+      "value": "wa1-35572"
+    },
+    {
+      "variable": "NETWORK_NAME",
+      "value": "test"
+    },
+    {
+      "variable": "MINION_COUNT",
+      "value": "1"
+    },
+    {
+      "variable": "REMOTE_TARGET_NAME",
+      "value": "KuberTest"
+    }
+  ],
   "steps": [
     {
       "name": "Step 1",
       "source": "cakk/rhel",
-      "environment": [
-        {
-          "variable": "USERNAME",
-          "value": "cakkineni"
-        },
-        {
-          "variable": "CPU",
-          "value": "2"
-        },
-        {
-          "variable": "MEMORY_GB",
-          "value": "2"
-        },
-        {
-          "variable": "PASSWORD",
-          "value": "Svvs12345~"
-        },
-        {
-          "variable": "REGION",
-          "value": "WA1"
-        },
-        {
-          "variable": "GROUP_ID",
-          "value": "wa1-35572"
-        },
-        {
-          "variable": "NETWORK_NAME",
-          "value": "test"
-        },
-        {
-          "variable": "SERVER_COUNT",
-          "value": "2"
-        },
-        {
-          "variable": "REMOTE_TARGET_NAME",
-          "value": "KuberTest"
-        }
-      ]
+
     },
     {
       "name": "Step 2",

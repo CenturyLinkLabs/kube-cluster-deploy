@@ -3,7 +3,7 @@ package provision
 import "strings"
 
 type CloudProvider interface {
-	ProvisionCluster(params Params) []Server
+	ProvisionCluster(params Params) ([]Server, error)
 }
 
 func New(providerType string) CloudProvider {
