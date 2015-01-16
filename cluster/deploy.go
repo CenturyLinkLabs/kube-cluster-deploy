@@ -20,6 +20,7 @@ func main() {
 	}()
 
 	mIP := ""
+	mPrIP := ""
 	mPK := ""
 	var miIP []string
 
@@ -39,10 +40,12 @@ func main() {
 		} else {
 			mIP = v.PublicIP
 			mPK = v.PrivateSSHKey
+			mPrIP = v.PrivateIP
 		}
 	}
 
-	utils.SetKey("MASTER_IP", mIP)
+	utils.SetKey("$MASTER_PUBLIC_IP", mIP)
+	utils.SetKey("$MASTER_PRIVATE_IP", mPrIP)
 	utils.SetKey("MASTER_PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte(mPK)))
 	utils.SetKey("MINION_IPS", strings.Join(miIP, ","))
 }

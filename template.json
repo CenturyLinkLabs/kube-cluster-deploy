@@ -13,7 +13,7 @@
       "variable": "MEMORY_GB",
       "value": "2"
     },
-    {
+    {ji
       "variable": "PASSWORD",
       "value": "Svvs12345~"
     },
@@ -41,7 +41,7 @@
   "steps": [
     {
       "name": "Step 1",
-      "source": "cakk/rhel",
+      "source": "cakk/rhel"
 
     },
     {
