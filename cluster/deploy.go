@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/CenturyLinkLabs/k8s-provision-vms/provision"
+	"github.com/CenturyLinkLabs/k8s-provision-vms/utils"
 	"os"
 	"strconv"
 	"strings"
@@ -24,8 +25,14 @@ func main() {
 
 	c, _ := strconv.Atoi(os.Getenv("MINION_COUNT"))
 	params := provision.Params{MinionCount: c}
+
 	cp := provision.New("centurylink")
-	s := cp.ProvisionCluster(params)
+	s, e := cp.ProvisionCluster(params)
+
+	if e != nil {
+		panic(e)
+	}
+
 	for _, v := range s {
 		if v.PrivateSSHKey == "" {
 			miIP = append(miIP, v.PrivateIP)
@@ -35,14 +42,7 @@ func main() {
 		}
 	}
 
-	setKey("REMOTE_TARGET_NAME", os.Getenv("REMOTE_TARGET_NAME"))
-	setKey("API_KEY", os.Getenv("USERNAME"))
-	setKey("API_PASSWORD", os.Getenv("PASSWORD"))
-	setKey("OPEN_TCP_PORTS", os.Getenv("OPEN_TCP_PORTS"))
-	setKey("KUBE_VERSION", os.Getenv("KUBE_VERSION"))
-	setKey("REGION", os.Getenv("REGION"))
-	setKey("NETWORK_NAME", os.Getenv("NETWORK_NAME"))
-	setKey("MASTER_IP", mIP)
-	setKey("MASTER_PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte(mPK)))
-	setKey("MINION_IPS", strings.Join(miIP, ","))
+	utils.SetKey("MASTER_IP", mIP)
+	utils.SetKey("MASTER_PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte(mPK)))
+	utils.SetKey("MINION_IPS", strings.Join(miIP, ","))
 }
