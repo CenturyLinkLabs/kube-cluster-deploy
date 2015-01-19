@@ -12,6 +12,9 @@ import (
 
 func main() {
 
+	utils.SetKey("MASTER_PRIVATE_IP", "10.10.10.10")
+	os.Exit(0)
+
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println(r)

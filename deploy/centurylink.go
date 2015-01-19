@@ -109,15 +109,12 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	pubIp := clc.publicIPFromServer(s)
 	priIp := clc.privateIPFromServer(s)
 
-	fmt.Printf("PublicIP: %s, PrivateIp: %s", pubIp, priIp)
-
-	clc.WaitForTCP(pubIp)
-
-	fmt.Print("Server Up....Adding SSH keys")
+	fmt.Printf("\nPublicIP: %s, PrivateIp: %s", pubIp, priIp)
 
 	priKey := clc.PrivateSSHKey
 
 	clc.addSSHKey(pubIp, cr.Password, clc.PublicSSHKey, priKey)
+
 	pmxS := CloudServer{
 		Name:          s.Name,
 		PublicIP:      pubIp,
@@ -131,6 +128,10 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 }
 
 func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey string, privateKey string) {
+
+	clc.WaitForTCP(publicIp)
+
+	fmt.Print("\nServer Up....Adding SSH keys")
 
 	config := &ssh.ClientConfig{
 		User: "root",
