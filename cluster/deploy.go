@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/CenturyLinkLabs/k8s-provision-vms/provision"
-	"github.com/CenturyLinkLabs/k8s-provision-vms/utils"
+	"github.com/CenturyLinkLabs/kube-cluster-deploy/provision"
+	"github.com/CenturyLinkLabs/kube-cluster-deploy/utils"
 	"os"
 	"strconv"
 	"strings"

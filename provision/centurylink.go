@@ -3,8 +3,8 @@ package provision
 import (
 	"fmt"
 	"github.com/CenturyLinkLabs/clcgo"
-	"github.com/CenturyLinkLabs/k8s-provision-vms/deploy"
-	"github.com/CenturyLinkLabs/k8s-provision-vms/utils"
+	"github.com/CenturyLinkLabs/kube-cluster-deploy/deploy"
+	"github.com/CenturyLinkLabs/kube-cluster-deploy/utils"
 	"os"
 	"strconv"
 )
