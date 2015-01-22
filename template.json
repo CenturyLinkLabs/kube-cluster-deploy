@@ -15,7 +15,7 @@
     },
     {
       "variable": "PASSWORD",
-      "value": "Svvs12345~"
+      "value": "******"
     },
     {
       "variable": "REGION",
@@ -41,17 +41,22 @@
   "steps": [
     {
       "name": "Step 1",
-      "source": "cakk/rhel"
+      "source": "centurylink/kube-cluster-deploy"
 
     },
     {
       "name": "Step 2",
-      "source": "cakk/kuberup"
+      "source": "cakkineni/kuberup"
     },
     {
-      "name": "Step 2",
-      "source": "cakk/agent"
+      "name": "Step 3",
+      "source": "cakkineni/agent"
+    },
+    {
+      "name": "Step 4",
+      "source": "cakkineni/agentinstall"
     }
+
   ]
 }
 

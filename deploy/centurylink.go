@@ -44,7 +44,10 @@ func (clc *CenturyLink) initProvider() error {
 	}
 
 	clc.clcClient = clcgo.NewClient()
-	clc.ServerTemplate = "RHEL-7-64-TEMPLATE"
+	fmt.Printf("ServerTemplate:%s", clc.ServerTemplate)
+	if clc.ServerTemplate == "" {
+		clc.ServerTemplate = "RHEL-7-64-TEMPLATE"
+	}
 
 	e := clc.clcClient.GetAPICredentials(clc.APIUsername, clc.APIPassword)
 
@@ -98,6 +101,7 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	for !st.HasSucceeded() {
 		time.Sleep(time.Second * 10)
 		clc.clcClient.GetEntity(st)
+
 	}
 
 	fmt.Print("\nPublic IP is added!")
