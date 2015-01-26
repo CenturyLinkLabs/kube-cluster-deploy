@@ -41,22 +41,20 @@
   "steps": [
     {
       "name": "Step 1",
-      "source": "centurylink/kube-cluster-deploy"
+      "source": "centurylink/kube-cluster-deploy:latest"
 
     },
     {
       "name": "Step 2",
-      "source": "cakkineni/kuberup"
+      "source": "centurylink/kube-install:latest"
     },
     {
       "name": "Step 3",
-      "source": "cakkineni/agent"
+      "source": "centurylink/agent-server-deploy:latest"
     },
     {
       "name": "Step 4",
-      "source": "cakkineni/agentinstall"
+      "source": "centurylink/remote-agent-install:latest"
     }
-
   ]
 }
-

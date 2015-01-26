@@ -70,14 +70,17 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	fmt.Print("\nDeploying Server")
 	st, e := clc.clcClient.SaveEntity(&s)
 	if e != nil {
-		panic(e)
 		return CloudServer{}, e
 	}
 
 	fmt.Print("\nWaiting for server to provision")
+
 	for !st.HasSucceeded() {
 		time.Sleep(time.Second * 10)
-		clc.clcClient.GetEntity(st)
+		e = clc.clcClient.GetEntity(&st)
+		if e != nil {
+			return CloudServer{}, e
+		}
 	}
 
 	clc.clcClient.GetEntity(&s)
@@ -85,13 +88,15 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	fmt.Printf("\nServer is provisioned: %s", s.Name)
 
 	var ports []clcgo.Port
-	for p, _ := range clc.TCPOpenPorts {
+	for _, p := range clc.TCPOpenPorts {
 		ports = append(ports, clcgo.Port{Protocol: "TCP", Port: p})
 	}
 	ports = append(ports, clcgo.Port{Protocol: "TCP", Port: 22})
 	ports = append(ports, clcgo.Port{Protocol: "TCP", Port: 8080})
 
-	a := clcgo.PublicIPAddress{Server: s, Ports: ports}
+	priIp := clc.privateIPFromServer(s)
+
+	a := clcgo.PublicIPAddress{Server: s, Ports: ports, InternalIPAddress: priIp}
 	st, e = clc.clcClient.SaveEntity(&a)
 	if e != nil {
 		return CloudServer{}, e
@@ -100,8 +105,7 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	fmt.Print("Adding public IP")
 	for !st.HasSucceeded() {
 		time.Sleep(time.Second * 10)
-		clc.clcClient.GetEntity(st)
-
+		clc.clcClient.GetEntity(&st)
 	}
 
 	fmt.Print("\nPublic IP is added!")
@@ -111,7 +115,6 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	clc.clcClient.GetEntity(&cr)
 
 	pubIp := clc.publicIPFromServer(s)
-	priIp := clc.privateIPFromServer(s)
 
 	fmt.Printf("\nPublicIP: %s, PrivateIp: %s", pubIp, priIp)
 
