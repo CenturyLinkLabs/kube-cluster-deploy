@@ -2,8 +2,10 @@ package deploy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/CenturyLinkLabs/clcgo"
+	"github.com/CenturyLinkLabs/kube-cluster-deploy/utils"
 	"golang.org/x/crypto/ssh"
 	"net"
 	"time"
@@ -11,7 +13,6 @@ import (
 
 type CenturyLink struct {
 	clcClient      *clcgo.Client
-	NetworkName    string
 	CPU            int
 	MemoryGB       int
 	PrivateSSHKey  string
@@ -40,24 +41,26 @@ func (clc CenturyLink) DeployVM() (CloudServer, error) {
 func (clc *CenturyLink) initProvider() error {
 
 	if clc.APIUsername == "" || clc.APIPassword == "" || clc.GroupID == "" {
-		fmt.Print("\n\nMissing Params...Check Docs....\n\n")
+		return errors.New("\nMissing Params...Check Docs....")
 	}
 
 	clc.clcClient = clcgo.NewClient()
-	fmt.Printf("ServerTemplate:%s", clc.ServerTemplate)
 	if clc.ServerTemplate == "" {
 		clc.ServerTemplate = "RHEL-7-64-TEMPLATE"
 	}
 
 	e := clc.clcClient.GetAPICredentials(clc.APIUsername, clc.APIPassword)
-
 	if e != nil {
 		return e
 	}
+
 	return nil
 }
 
 func (clc *CenturyLink) createServer() (CloudServer, error) {
+
+	utils.LogInfo("\nDeploying Server")
+
 	s := clcgo.Server{
 		Name:           clc.ServerName,
 		GroupID:        clc.GroupID,
@@ -67,79 +70,82 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 		Type:           "standard",
 	}
 
-	fmt.Print("\nDeploying Server")
 	st, e := clc.clcClient.SaveEntity(&s)
 	if e != nil {
 		return CloudServer{}, e
 	}
 
-	fmt.Print("\nWaiting for server to provision")
-
-	for !st.HasSucceeded() {
-		time.Sleep(time.Second * 10)
-		e = clc.clcClient.GetEntity(&st)
-		if e != nil {
-			return CloudServer{}, e
-		}
-	}
-
-	clc.clcClient.GetEntity(&s)
-
-	fmt.Printf("\nServer is provisioned: %s", s.Name)
-
-	var ports []clcgo.Port
-	for _, p := range clc.TCPOpenPorts {
-		ports = append(ports, clcgo.Port{Protocol: "TCP", Port: p})
-	}
-	ports = append(ports, clcgo.Port{Protocol: "TCP", Port: 22})
-	ports = append(ports, clcgo.Port{Protocol: "TCP", Port: 8080})
-
-	priIp := clc.privateIPFromServer(s)
-
-	a := clcgo.PublicIPAddress{Server: s, Ports: ports, InternalIPAddress: priIp}
-	st, e = clc.clcClient.SaveEntity(&a)
+	utils.LogInfo("\nWaiting for server to provision")
+	e = clc.waitForJob(st)
 	if e != nil {
 		return CloudServer{}, e
 	}
-
-	fmt.Print("Adding public IP")
-	for !st.HasSucceeded() {
-		time.Sleep(time.Second * 10)
-		clc.clcClient.GetEntity(&st)
-	}
-
-	fmt.Print("\nPublic IP is added!")
 	clc.clcClient.GetEntity(&s)
+
+	e = clc.addPublicIP(s)
+	if e != nil {
+		return CloudServer{}, e
+	}
+	clc.clcClient.GetEntity(&s)
+
+	utils.LogInfo("\nServer is provisioned: " + s.Name)
 
 	cr := clcgo.Credentials{Server: s}
 	clc.clcClient.GetEntity(&cr)
 
-	pubIp := clc.publicIPFromServer(s)
-
-	fmt.Printf("\nPublicIP: %s, PrivateIp: %s", pubIp, priIp)
+	pubIP := clc.publicIPFromServer(s)
+	priIP := clc.privateIPFromServer(s)
 
 	priKey := clc.PrivateSSHKey
+	utils.LogInfo(fmt.Sprintf("\nPublicIP: %s, PrivateIP: %s", pubIP, priIP))
 
-	clc.addSSHKey(pubIp, cr.Password, clc.PublicSSHKey, priKey)
+	clc.addSSHKey(pubIP, cr.Password, clc.PublicSSHKey, priKey)
 
 	pmxS := CloudServer{
 		Name:          s.Name,
-		PublicIP:      pubIp,
-		PrivateIP:     priIp,
+		PublicIP:      pubIP,
+		PrivateIP:     priIP,
 		PublicSSHKey:  clc.PublicSSHKey,
 		PrivateSSHKey: priKey,
 	}
-	println("\nServer deployment complete")
+
+	utils.LogInfo("Server deployment complete!!")
 
 	return pmxS, nil
 }
 
+func (clc *CenturyLink) addPublicIP(s clcgo.Server) error {
+
+	var ps []clcgo.Port
+	for _, p := range clc.TCPOpenPorts {
+		ps = append(ps, clcgo.Port{Protocol: "TCP", Port: p})
+	}
+	ps = append(ps, clcgo.Port{Protocol: "TCP", Port: 22})
+
+	priIP := clc.privateIPFromServer(s)
+
+	a := clcgo.PublicIPAddress{Server: s, Ports: ps, InternalIPAddress: priIP}
+	st, e := clc.clcClient.SaveEntity(&a)
+	if e != nil {
+		return e
+	}
+
+	utils.LogInfo("Adding public IP")
+	e = clc.waitForJob(st)
+	if e != nil {
+		return e
+	}
+
+	utils.LogInfo("Public IP is added!")
+	return nil
+}
+
 func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey string, privateKey string) {
 
+	utils.LogInfo("\nWaiting for server to start before adding ssh keys")
 	clc.WaitForTCP(publicIp)
 
-	fmt.Print("\nServer Up....Adding SSH keys")
-
+	utils.LogInfo("\nServer Up....Adding SSH keys")
 	config := &ssh.ClientConfig{
 		User: "root",
 		Auth: []ssh.AuthMethod{ssh.Password(password)},
@@ -152,6 +158,46 @@ func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey strin
 		pKCmd := fmt.Sprintf("echo -e \"%s\" >> ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa", privateKey)
 		clc.executeCmd(pKCmd, publicIp, config)
 	}
+	utils.LogInfo("\nSSH Keys added")
+}
+
+func (clc *CenturyLink) executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
+	conn, _ := ssh.Dial("tcp", hostname+":22", config)
+	session, _ := conn.NewSession()
+	defer session.Close()
+
+	var stdoutBuf bytes.Buffer
+	session.Stdout = &stdoutBuf
+	session.Run(cmd)
+
+	return hostname + ": " + stdoutBuf.String()
+}
+
+func (clc *CenturyLink) WaitForTCP(addr string) error {
+	utils.LogInfo("\nWaiting for server to start")
+	for {
+		conn, err := net.Dial("tcp", addr+":22")
+		if err != nil {
+			continue
+		}
+		defer conn.Close()
+		if _, err = conn.Read(make([]byte, 1)); err != nil {
+			continue
+		}
+		break
+	}
+	return nil
+}
+
+func (clc *CenturyLink) waitForJob(st clcgo.Status) error {
+	for !st.HasSucceeded() {
+		time.Sleep(time.Second * 10)
+		e := clc.clcClient.GetEntity(&st)
+		if e != nil {
+			return e
+		}
+	}
+	return nil
 }
 
 func (clc *CenturyLink) publicIPFromServer(s clcgo.Server) string {
@@ -172,33 +218,4 @@ func (clc *CenturyLink) privateIPFromServer(s clcgo.Server) string {
 		}
 	}
 	return ""
-}
-
-func (clc *CenturyLink) executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
-	conn, _ := ssh.Dial("tcp", hostname+":22", config)
-	session, _ := conn.NewSession()
-	defer session.Close()
-
-	var stdoutBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Run(cmd)
-
-	return hostname + ": " + stdoutBuf.String()
-}
-
-func (clc *CenturyLink) WaitForTCP(addr string) error {
-	println("Waiting for server to start")
-	for {
-		conn, err := net.Dial("tcp", addr+":22")
-		print(" . ")
-		if err != nil {
-			continue
-		}
-		defer conn.Close()
-		if _, err = conn.Read(make([]byte, 1)); err != nil {
-			continue
-		}
-		break
-	}
-	return nil
 }

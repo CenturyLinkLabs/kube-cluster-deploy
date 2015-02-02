@@ -1,61 +1,72 @@
 package provision
 
 import (
-	"fmt"
 	"github.com/CenturyLinkLabs/clcgo"
 	"github.com/CenturyLinkLabs/kube-cluster-deploy/deploy"
 	"github.com/CenturyLinkLabs/kube-cluster-deploy/utils"
 	"os"
 	"strconv"
+	"strings"
 )
 
+// CenturyLink has the data that is used for provisioning a server. Most of the
+// data is passed in environment variables. The following env vars are required
+// for provisioning a server in CenturyLink, USERNAME, PASSWORD, GROUP_ID, CPU,
+// MEMORY_GB, OPEN_TCP_PORTS
 type CenturyLink struct {
-	clcClient           *clcgo.Client
-	networkName         string
-	groupId             string
-	cpu                 int
-	memGb               int
-	masterPrivateSSHKey string
-	masterPublicSSHKey  string
-	uname               string
-	password            string
+	clcClient   *clcgo.Client
+	groupID     string
+	cpu         int
+	memGb       int
+	masterPK    string
+	masterPuK   string
+	uname       string
+	password    string
+	minionPorts []int
 }
 
+// NewCenturyLink is used to create a new client for using CenturyLink struct to
+// create servers.
 func NewCenturyLink() *CenturyLink {
 	cl := new(CenturyLink)
 	return cl
 }
 
+// ProvisionCluster is used to provision a cluster of RHEL7 VMs (1 Master +
+// n Minions).
 func (clc CenturyLink) ProvisionCluster(params Params) ([]Server, error) {
-	fmt.Printf("\nProvisioning Server Cluster in Centurylink")
-	clc.initProvider()
+	utils.LogInfo("\nProvisioning Server Cluster in Centurylink")
+	utils.LogInfo("\nMinion Count: " + strconv.Itoa(params.MinionCount))
 
-	fmt.Printf("\nMinion Count: %d", params.MinionCount)
+	e := clc.initProvider()
+	if e != nil {
+		return nil, e
+	}
+
 	var servers []Server
 	for i := 0; i < params.MinionCount+1; i++ {
-
 		pk := ""
 		if i == 0 {
-			fmt.Printf("\nDeploying Kubernetes Master")
-			pk = clc.masterPrivateSSHKey
+			utils.LogInfo("\nDeploying Kubernetes Master")
+			pk = clc.masterPK
 		} else {
-			fmt.Printf("\nDeploying Kubernetes Minion %d", i)
+			utils.LogInfo("\nDeploying Kubernetes Minion " + strconv.Itoa(i))
 		}
 
 		c := deploy.CenturyLink{
 			PrivateSSHKey: pk,
-			PublicSSHKey:  clc.masterPublicSSHKey,
+			PublicSSHKey:  clc.masterPuK,
 			APIUsername:   clc.uname,
 			APIPassword:   clc.password,
-			GroupID:       clc.groupId,
+			GroupID:       clc.groupID,
 			CPU:           clc.cpu,
 			MemoryGB:      clc.memGb,
 			ServerName:    "KUBE",
+			TCPOpenPorts:  clc.minionPorts,
 		}
 
 		s, e := c.DeployVM()
 		if e != nil {
-			panic(e)
 			return nil, e
 		}
 
@@ -64,19 +75,35 @@ func (clc CenturyLink) ProvisionCluster(params Params) ([]Server, error) {
 	return servers, nil
 }
 
-func (clc *CenturyLink) initProvider() bool {
+func (clc *CenturyLink) initProvider() error {
 	clc.uname = os.Getenv("USERNAME")
 	clc.password = os.Getenv("PASSWORD")
-	clc.networkName = os.Getenv("NETWORK_NAME")
-	clc.groupId = os.Getenv("GROUP_ID")
+	clc.groupID = os.Getenv("GROUP_ID")
 	clc.cpu, _ = strconv.Atoi(os.Getenv("CPU"))
 	clc.memGb, _ = strconv.Atoi(os.Getenv("MEMORY_GB"))
-
-	if clc.uname == "" || clc.password == "" || clc.networkName == "" {
-		fmt.Printf("\n\nMissing Params.. in cluster creation...Check Docs....\n\n")
+	ps := os.Getenv("OPEN_TCP_PORTS")
+	if ps != "" {
+		s := strings.Split(ps, ",")
+		for _, p := range s {
+			v, e := strconv.Atoi(p)
+			if e == nil {
+				clc.minionPorts = append(clc.minionPorts, v)
+			}
+		}
 	}
 
-	clc.masterPrivateSSHKey, clc.masterPublicSSHKey, _ = utils.CreateSSHKey()
+	if clc.uname == "" || clc.password == "" || clc.groupID == "" {
+		utils.LogInfo("\n\nMissing Params.. in cluster creation...Check Docs....\n\n")
+	}
 
-	return true
+	pk, puk, err := utils.CreateSSHKey()
+	clc.masterPK = pk
+	clc.masterPuK = puk
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

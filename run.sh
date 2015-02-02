@@ -1,9 +1,0 @@
-export USERNAME=cakkineni
-export CPU=2
-export MEMORY_GB=2
-export PASSWORD=Svvs12345~
-export REGION=WA1
-export GROUP_ID=wa1-35572
-export NETWORK_NAME=test
-export SERVER_COUNT=2
-export REMOTE_TARGET_NAME=KuberTest
