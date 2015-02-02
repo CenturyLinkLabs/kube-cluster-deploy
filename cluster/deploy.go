@@ -25,13 +25,18 @@ func main() {
 	var miIP []string
 
 	c, _ := strconv.Atoi(os.Getenv("MINION_COUNT"))
+
+	if c == 0 {
+		panic("\nPlease make sure you have at least one minion in the cluster.")
+	}
+
 	params := provision.Params{MinionCount: c}
 
 	cp := provision.New("centurylink")
 	s, e := cp.ProvisionCluster(params)
 
 	if e != nil {
-		panic(e)
+		panic(e.Error())
 	}
 
 	for _, v := range s {

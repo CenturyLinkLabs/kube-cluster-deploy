@@ -2,11 +2,17 @@ package utils
 
 import (
 	"fmt"
+	log "github.com/Sirupsen/logrus"
 	"github.com/coreos/go-etcd/etcd"
 	"os"
 	"strings"
 )
 
+// SetKey is used to log key value pairs to stdout/etcd so that dray can pass
+// them down to subsequent images as needed. By default keys are logged to
+// stdout as ----BEGIN PANAMAX DATA----\nkey=value\n----END PANAMAX DATA----
+// tags. If LOG_TO env var is set to etcd, then keys are logged to etcd.
+// The etcd api is set using ETCD_API env variable.
 func SetKey(key string, value string) error {
 	logTo := os.Getenv("LOG_TO")
 	if logTo == "" {
@@ -15,7 +21,7 @@ func SetKey(key string, value string) error {
 	logTo = strings.ToLower(logTo)
 
 	if logTo == "etcd" {
-		println("Logging Keys to etcd...")
+		log.Info("Logging Keys to etcd...")
 		var ec *etcd.Client
 		eIP := os.Getenv("ETCD_API")
 		if eIP == "" {

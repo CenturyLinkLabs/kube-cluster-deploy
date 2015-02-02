@@ -8,6 +8,8 @@ import (
 	"encoding/pem"
 )
 
+// CreateSSHKey is used to generate rsa private & public keys that are used to
+// set keys for ssh login to a server.
 func CreateSSHKey() (string, string, error) {
 
 	pk, e := rsa.GenerateKey(rand.Reader, 2014)
