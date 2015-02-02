@@ -27,8 +27,7 @@ func main() {
 	c, _ := strconv.Atoi(os.Getenv("MINION_COUNT"))
 
 	if c == 0 {
-		utils.LogErrorMessage("\nPlease make sure you have at least one minion in the cluster.")
-		os.Exit(1)
+		panic("\nPlease make sure you have at least one minion in the cluster.")
 	}
 
 	params := provision.Params{MinionCount: c}
@@ -37,7 +36,7 @@ func main() {
 	s, e := cp.ProvisionCluster(params)
 
 	if e != nil {
-		panic(e)
+		panic(e.Error())
 	}
 
 	for _, v := range s {

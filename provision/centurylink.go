@@ -1,6 +1,7 @@
 package provision
 
 import (
+	"errors"
 	"github.com/CenturyLinkLabs/clcgo"
 	"github.com/CenturyLinkLabs/kube-cluster-deploy/deploy"
 	"github.com/CenturyLinkLabs/kube-cluster-deploy/utils"
@@ -93,7 +94,11 @@ func (clc *CenturyLink) initProvider() error {
 	}
 
 	if clc.uname == "" || clc.password == "" || clc.groupID == "" {
-		utils.LogInfo("\n\nMissing Params.. in cluster creation...Check Docs....\n\n")
+		return errors.New("\n\nMissing Params.. in cluster creation...Check Docs....\n\n")
+	}
+
+	if clc.cpu <= 0 || clc.memGb <= 0 {
+		return errors.New("\n\nMake sure CPU & MemoryGB values are greater than 0.\n\n")
 	}
 
 	pk, puk, err := utils.CreateSSHKey()
