@@ -36,7 +36,7 @@ func NewCenturyLink() *CenturyLink {
 // ProvisionCluster is used to provision a cluster of RHEL7 VMs (1 Master +
 // n Minions).
 func (clc CenturyLink) ProvisionCluster(params Params) ([]Server, error) {
-	utils.LogInfo("\nProvisioning Server Cluster in Centurylink")
+	utils.LogInfo("\nProvisioning Server Cluster into Centurylink Cloud...")
 	utils.LogInfo("\nMinion Count: " + strconv.Itoa(params.MinionCount))
 
 	e := clc.initProvider()
@@ -48,10 +48,10 @@ func (clc CenturyLink) ProvisionCluster(params Params) ([]Server, error) {
 	for i := 0; i < params.MinionCount+1; i++ {
 		pk := ""
 		if i == 0 {
-			utils.LogInfo("\nDeploying Kubernetes Master")
+			utils.LogInfo("\nDeploying Kubernetes Master...")
 			pk = clc.masterPK
 		} else {
-			utils.LogInfo("\nDeploying Kubernetes Minion " + strconv.Itoa(i))
+			utils.LogInfo("\nDeploying Kubernetes Minion... " + strconv.Itoa(i))
 		}
 
 		c := deploy.CenturyLink{
@@ -94,7 +94,7 @@ func (clc *CenturyLink) initProvider() error {
 	}
 
 	if clc.uname == "" || clc.password == "" || clc.groupID == "" {
-		return errors.New("\n\nMissing Params.. in cluster creation...Check Docs....\n\n")
+		return errors.New("\n\nMissing values to create cluster. Check documentation for required values\n\n")
 	}
 
 	if clc.cpu <= 0 || clc.memGb <= 0 {
