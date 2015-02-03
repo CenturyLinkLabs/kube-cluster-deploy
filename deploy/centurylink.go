@@ -41,7 +41,7 @@ func (clc CenturyLink) DeployVM() (CloudServer, error) {
 func (clc *CenturyLink) initProvider() error {
 
 	if clc.APIUsername == "" || clc.APIPassword == "" || clc.GroupID == "" {
-		return errors.New("\nMissing Params...Check Docs....")
+		return errors.New("\nMissing values to create cluster. Check documentation for required values.")
 	}
 
 	clc.clcClient = clcgo.NewClient()
@@ -75,7 +75,7 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 		return CloudServer{}, e
 	}
 
-	utils.LogInfo("\nWaiting for server to provision")
+	utils.LogInfo("\nWaiting for server to provision...")
 	e = clc.waitForJob(st)
 	if e != nil {
 		return CloudServer{}, e
@@ -130,7 +130,7 @@ func (clc *CenturyLink) addPublicIP(s clcgo.Server) error {
 		return e
 	}
 
-	utils.LogInfo("Adding public IP")
+	utils.LogInfo("Adding public IP...")
 	e = clc.waitForJob(st)
 	if e != nil {
 		return e
@@ -142,7 +142,7 @@ func (clc *CenturyLink) addPublicIP(s clcgo.Server) error {
 
 func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey string, privateKey string) {
 
-	utils.LogInfo("\nWaiting for server to start before adding ssh keys")
+	utils.LogInfo("\nWaiting for server to start before adding ssh keys...")
 	clc.WaitForTCP(publicIp)
 
 	utils.LogInfo("\nServer Up....Adding SSH keys")
@@ -158,7 +158,7 @@ func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey strin
 		pKCmd := fmt.Sprintf("echo -e \"%s\" >> ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa", privateKey)
 		clc.executeCmd(pKCmd, publicIp, config)
 	}
-	utils.LogInfo("\nSSH Keys added")
+	utils.LogInfo("\nSSH Keys added!")
 }
 
 func (clc *CenturyLink) executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
@@ -174,7 +174,7 @@ func (clc *CenturyLink) executeCmd(cmd, hostname string, config *ssh.ClientConfi
 }
 
 func (clc *CenturyLink) WaitForTCP(addr string) error {
-	utils.LogInfo("\nWaiting for server to start")
+	utils.LogInfo("\nWaiting for server to start...")
 	for {
 		conn, err := net.Dial("tcp", addr+":22")
 		if err != nil {
