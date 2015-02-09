@@ -55,4 +55,6 @@ func main() {
 	utils.SetKey("MASTER_PRIVATE_IP", mPrIP)
 	utils.SetKey("MASTER_PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte(mPK)))
 	utils.SetKey("MINION_IPS", strings.Join(miIP, ","))
+    utils.SetKey("UBUNTU_LOGIN_USER","ubuntu")
+    utils.SetKey("RHEL_LOGIN_USER","ec2-user")
 }
