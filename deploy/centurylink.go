@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/CenturyLinkLabs/clcgo"
-	"github.com/CenturyLinkLabs/kube-cluster-deploy/utils"
+	"github.com/CenturylinkLabs/clcgo"
+	"github.com/CenturylinkLabs/kube-cluster-deploy/utils"
 	"golang.org/x/crypto/ssh"
-	"net"
 	"time"
 )
 
-type CenturyLink struct {
+type Centurylink struct {
 	clcClient      *clcgo.Client
 	CPU            int
 	MemoryGB       int
@@ -25,20 +24,24 @@ type CenturyLink struct {
 	ServerTemplate string
 }
 
-func NewCenturyLink() *CenturyLink {
-	cl := new(CenturyLink)
+func NewCenturylink() *Centurylink {
+	cl := new(Centurylink)
 	return cl
 }
 
-func (clc CenturyLink) DeployVM() (CloudServer, error) {
+func (clc Centurylink) DeployVMs() ([]CloudServer, error) {
 	e := clc.initProvider()
 	if e != nil {
-		return CloudServer{}, e
+		return nil, e
 	}
-	return clc.createServer()
+
+    s, e := clc.createServer()
+    var servers []CloudServer
+    servers = append(servers, s )
+    return servers, e
 }
 
-func (clc *CenturyLink) initProvider() error {
+func (clc *Centurylink) initProvider() error {
 
 	if clc.APIUsername == "" || clc.APIPassword == "" || clc.GroupID == "" {
 		return errors.New("\nMissing Params...Check Docs....")
@@ -57,7 +60,7 @@ func (clc *CenturyLink) initProvider() error {
 	return nil
 }
 
-func (clc *CenturyLink) createServer() (CloudServer, error) {
+func (clc *Centurylink) createServer() (CloudServer, error) {
 
 	utils.LogInfo("\nDeploying Server")
 
@@ -114,14 +117,13 @@ func (clc *CenturyLink) createServer() (CloudServer, error) {
 	return pmxS, nil
 }
 
-func (clc *CenturyLink) addPublicIP(s clcgo.Server) error {
+func (clc *Centurylink) addPublicIP(s clcgo.Server) error {
 
 	var ps []clcgo.Port
+    clc.TCPOpenPorts = append(clc.TCPOpenPorts, 22)
 	for _, p := range clc.TCPOpenPorts {
 		ps = append(ps, clcgo.Port{Protocol: "TCP", Port: p})
 	}
-	ps = append(ps, clcgo.Port{Protocol: "TCP", Port: 22})
-
 	priIP := clc.privateIPFromServer(s)
 
 	a := clcgo.PublicIPAddress{Server: s, Ports: ps, InternalIPAddress: priIP}
@@ -140,10 +142,10 @@ func (clc *CenturyLink) addPublicIP(s clcgo.Server) error {
 	return nil
 }
 
-func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey string, privateKey string) {
+func (clc *Centurylink) addSSHKey(publicIp string, password string, pubKey string, privateKey string) {
 
 	utils.LogInfo("\nWaiting for server to start before adding ssh keys")
-	clc.WaitForTCP(publicIp)
+	utils.WaitForSSH(publicIp)
 
 	utils.LogInfo("\nServer Up....Adding SSH keys")
 	config := &ssh.ClientConfig{
@@ -161,7 +163,7 @@ func (clc *CenturyLink) addSSHKey(publicIp string, password string, pubKey strin
 	utils.LogInfo("\nSSH Keys added")
 }
 
-func (clc *CenturyLink) executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
+func (clc *Centurylink) executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
 	conn, _ := ssh.Dial("tcp", hostname+":22", config)
 	session, _ := conn.NewSession()
 	defer session.Close()
@@ -173,23 +175,8 @@ func (clc *CenturyLink) executeCmd(cmd, hostname string, config *ssh.ClientConfi
 	return hostname + ": " + stdoutBuf.String()
 }
 
-func (clc *CenturyLink) WaitForTCP(addr string) error {
-	utils.LogInfo("\nWaiting for server to start")
-	for {
-		conn, err := net.Dial("tcp", addr+":22")
-		if err != nil {
-			continue
-		}
-		defer conn.Close()
-		if _, err = conn.Read(make([]byte, 1)); err != nil {
-			continue
-		}
-		break
-	}
-	return nil
-}
 
-func (clc *CenturyLink) waitForJob(st clcgo.Status) error {
+func (clc *Centurylink) waitForJob(st clcgo.Status) error {
 	for !st.HasSucceeded() {
 		time.Sleep(time.Second * 10)
 		e := clc.clcClient.GetEntity(&st)
@@ -200,7 +187,7 @@ func (clc *CenturyLink) waitForJob(st clcgo.Status) error {
 	return nil
 }
 
-func (clc *CenturyLink) publicIPFromServer(s clcgo.Server) string {
+func (clc *Centurylink) publicIPFromServer(s clcgo.Server) string {
 	addresses := s.Details.IPAddresses
 	for _, a := range addresses {
 		if a.Public != "" {
@@ -210,7 +197,7 @@ func (clc *CenturyLink) publicIPFromServer(s clcgo.Server) string {
 	return ""
 }
 
-func (clc *CenturyLink) privateIPFromServer(s clcgo.Server) string {
+func (clc *Centurylink) privateIPFromServer(s clcgo.Server) string {
 	addresses := s.Details.IPAddresses
 	for _, a := range addresses {
 		if a.Internal != "" {

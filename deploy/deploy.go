@@ -6,15 +6,19 @@ import (
 )
 
 type Deploy interface {
-	DeployVM() (CloudServer, error)
+	DeployVMs() ([]CloudServer, error)
 }
 
 func New(p string) (Deploy, error) {
 	switch strings.ToLower(p) {
 	case "centurylink":
-		return NewCenturyLink(), nil
+		return NewCenturylink(), nil
 	}
 	return nil, errors.New("Unsupported Cloud Provider")
+}
+
+type Params struct {
+    Count int
 }
 
 type CloudServer struct {
