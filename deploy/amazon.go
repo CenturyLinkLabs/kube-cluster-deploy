@@ -19,16 +19,13 @@ type Amazon struct {
     ApiKeyID string
     ApiAccessKey string
     AmiName string
+    AmiOwnerId string
     SSHKeyName string
     PrivateKey string
     amzClient *ec2.EC2
     ServerCount int
     TCPOpenPorts   []int
 }
-
-const (
-    rhel7AmiName = "ami-99bef1a9"
-)
 
 func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
 
@@ -37,8 +34,11 @@ func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
         return nil, e
     }
 
-    if (amz.AmiName == "") {
-        amz.AmiName = rhel7AmiName
+    amz.AmiName, e = amz.getAmiID()
+
+    if amz.AmiName == "" || e != nil {
+        fmt.Printf("AMI Not found")
+        return nil, errors.New("AMI Not found for provisioning. Cannot proceed.")
     }
 
     g, e := amz.createFWRules()
@@ -75,6 +75,18 @@ func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
     utils.LogInfo("\nServer provisioning complete...")
 
     return servers, nil
+}
+
+func (amz *Amazon) getAmiID() (string, error) {
+    f := ec2.NewFilter()
+    f.Add("name","*"+ amz.AmiName +"*")
+    f.Add("owner-id",amz.AmiOwnerId)
+    im, _ := amz.amzClient.Images(nil, f)
+    fmt.Printf("%#v", im.Images)
+    if im != nil && len(im.Images) >0 {
+        return im.Images[0].Id, nil
+    }
+    return "", errors.New("Image not found")
 }
 
 func (amz *Amazon) createFWRules() (ec2.SecurityGroup, error) {
