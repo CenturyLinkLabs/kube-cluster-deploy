@@ -82,7 +82,6 @@ func (amz *Amazon) getAmiID() (string, error) {
     f.Add("name","*"+ amz.AmiName +"*")
     f.Add("owner-id",amz.AmiOwnerId)
     im, _ := amz.amzClient.Images(nil, f)
-    fmt.Printf("%#v", im.Images)
     if im != nil && len(im.Images) >0 {
         return im.Images[0].Id, nil
     }
