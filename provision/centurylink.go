@@ -48,10 +48,10 @@ func (clc Centurylink) ProvisionCluster(params Params) ([]deploy.CloudServer, er
 	for i := 0; i < params.MinionCount+1; i++ {
 		pk := ""
 		if i == 0 {
-			utils.LogInfo("\nDeploying Kubernetes Master")
+			utils.LogInfo("\nDeploying Kubernetes Master...")
 			pk = clc.masterPK
 		} else {
-			utils.LogInfo("\nDeploying Kubernetes Minion " + strconv.Itoa(i))
+			utils.LogInfo("\nDeploying Kubernetes Minion... " + strconv.Itoa(i))
 		}
 
 		c := deploy.Centurylink{
