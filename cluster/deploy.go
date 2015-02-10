@@ -39,6 +39,7 @@ func main() {
     mPuIP := ""
     mPrIP := ""
     mPK := ""
+
     var miIP []string
 
     for _, v := range s {

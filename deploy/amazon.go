@@ -37,9 +37,9 @@ func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
     amz.AmiName, e = amz.getAmiID()
 
     if amz.AmiName == "" || e != nil {
-        fmt.Printf("AMI Not found")
         return nil, errors.New("AMI Not found for provisioning. Cannot proceed.")
     }
+    utils.LogInfo(fmt.Sprintf("AMI Used: %s", amz.AmiName))
 
     g, e := amz.createFWRules()
 
@@ -149,19 +149,22 @@ func (amz *Amazon) init() error {
     }
 
     amz.amzClient = ec2.New(auth, r)
+    amz.getAmiID()
+
     return nil
 }
 
 
-func (amz *Amazon) ImportKey(pk string) (string, error) {
+func (amz *Amazon) ImportKey(puk string) (string, error) {
 
     e := amz.init()
     if e != nil {
         return "", e
     }
 
-    kn := "pmx-installer-" + amz.randSeq(4)
-    _, e = amz.amzClient.ImportKeyPair(kn, pk)
+    kn := "pmx-keypair-" + amz.randSeq(4)
+    _, e = amz.amzClient.ImportKeyPair(kn, puk)
+
     if e != nil {
         return "", e
     }
@@ -184,12 +187,10 @@ func(amz Amazon) ExecSSHCmd(publicIP string, privateKey string, command string) 
     e := utils.WaitForSSH(publicIP)
 
     if e != nil {
-        fmt.Printf("Panic")
         panic(e)
     }
 
     k, e := ssh.ParsePrivateKey([]byte(privateKey))
-    fmt.Printf("Key read")
     if e != nil {
         fmt.Println(e)
         panic(e)

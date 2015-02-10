@@ -5,15 +5,13 @@ import (
     "github.com/CenturylinkLabs/kube-cluster-deploy/utils"
     "errors"
     "github.com/CenturylinkLabs/kube-cluster-deploy/deploy"
-    "fmt")
+    "fmt"
+    "encoding/base64")
 
 type Amazon struct {
 
 }
 
-//AKIAIJAZWSCQEU32IMPQ
-//Secret Access Key:
-//eUdpKqdcXEItsjGzeVFmqtB/SIGbvZQ78G+S5nhV
 // NewAmazon is used to create a new client for using Amazon client to
 // create RHEL 7 server cluster.
 func NewAmazon() *Amazon {
@@ -69,6 +67,8 @@ func (amz *Amazon) ProvisionCluster(params Params) ([]deploy.CloudServer, error)
     c.ExecSSHCmd(servers[0].PublicIP, servers[0].PrivateSSHKey, cmd)
 
     utils.LogInfo("\nCluster Creating Complete...")
+    utils.SetKey("AMAZON_MASTER_KEY_NAME", kn)
+    utils.SetKey("MASTER_PUBLIC_KEY", base64.StdEncoding.EncodeToString([]byte(puk)))
 
     return servers, nil
 }
