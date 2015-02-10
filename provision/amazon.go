@@ -43,7 +43,7 @@ func (amz *Amazon) ProvisionCluster(params Params) ([]deploy.CloudServer, error)
     c.VMSize = vmSize
     c.AmiName = "RHEL-7.0_HVM_GA"
     c.AmiOwnerId = "309956199498"
-    c.TCPOpenPorts = []int{8080, 4001, 7001}
+    c.TCPOpenPorts = []int{8080, 4001, 7001, 10250}
 
     kn, e := c.ImportKey(puk)
     if e != nil {
