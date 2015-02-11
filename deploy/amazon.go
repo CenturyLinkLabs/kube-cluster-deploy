@@ -1,17 +1,18 @@
 package deploy
 
 import (
+    "bytes"
     "os"
     "errors"
-    "github.com/mitchellh/goamz/aws"
     "strings"
-    "github.com/mitchellh/goamz/ec2"
-    "github.com/CenturylinkLabs/kube-cluster-deploy/utils"
     "math/rand"
     "time"
     "fmt"
     "golang.org/x/crypto/ssh"
-    "bytes")
+    "github.com/mitchellh/goamz/aws"
+    "github.com/mitchellh/goamz/ec2"
+    "github.com/CenturylinkLabs/kube-cluster-deploy/utils"
+)
 
 type Amazon struct {
     VMSize string
@@ -25,6 +26,7 @@ type Amazon struct {
     amzClient *ec2.EC2
     ServerCount int
     TCPOpenPorts   []int
+    ServerNames []string
 }
 
 func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
@@ -37,12 +39,11 @@ func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
     amz.AmiName, e = amz.getAmiID()
 
     if amz.AmiName == "" || e != nil {
-        return nil, errors.New("AMI Not found for provisioning. Cannot proceed.")
+        return nil, errors.New("AMI Not found for provisioning. Cannot proceed.!!!")
     }
     utils.LogInfo(fmt.Sprintf("AMI Used: %s", amz.AmiName))
 
-    g, e := amz.createFWRules()
-
+    sg, e := amz.createFWRules()
     if e != nil {
         return nil, e
     }
@@ -53,7 +54,7 @@ func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
         MinCount:     amz.ServerCount,
         MaxCount:     amz.ServerCount,
         KeyName:      amz.SSHKeyName,
-        SecurityGroups: []ec2.SecurityGroup{g},
+        SecurityGroups: []ec2.SecurityGroup{sg},
     }
 
     resp, e := amz.amzClient.RunInstances(req)
@@ -64,23 +65,24 @@ func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
     utils.LogInfo("\nWaiting for servers to provision....")
 
     var servers []CloudServer
-    for _, inst := range resp.Instances {
+    for i, inst := range resp.Instances {
         s, e := amz.waitForServer(inst)
         if e != nil {
-            return servers, e
+            return nil, e
         }
+        amz.amzClient.CreateTags([]string{inst.InstanceId}, []ec2.Tag{ec2.Tag{Key: "Name", Value: amz.ServerNames[i]}})
+        s.Name = amz.ServerNames[i]
         s.PrivateSSHKey = amz.PrivateKey
         servers = append(servers, s)
     }
-    utils.LogInfo("\nServer provisioning complete...")
-
+    utils.LogInfo("\nProvisioning complete...")
     return servers, nil
 }
 
 func (amz *Amazon) getAmiID() (string, error) {
     f := ec2.NewFilter()
-    f.Add("name","*"+ amz.AmiName +"*")
-    f.Add("owner-id",amz.AmiOwnerId)
+    f.Add("name", "*"+ amz.AmiName +"*")
+    f.Add("owner-id", amz.AmiOwnerId)
     im, _ := amz.amzClient.Images(nil, f)
     if im != nil && len(im.Images) >0 {
         return im.Images[0].Id, nil
@@ -97,7 +99,7 @@ func (amz *Amazon) createFWRules() (ec2.SecurityGroup, error) {
 
     amz.TCPOpenPorts = append(amz.TCPOpenPorts, 22)
     for _, p := range amz.TCPOpenPorts {
-        ps = append(ps, ec2.IPPerm{Protocol: "tcp", SourceIPs: []string{"0.0.0.0/0"}, ToPort: p, FromPort: p,})
+        ps = append(ps, ec2.IPPerm{Protocol: "tcp", SourceIPs: []string{"0.0.0.0/0"}, ToPort: p, FromPort: p, })
     }
 
     _, e := amz.amzClient.CreateSecurityGroup(g)
@@ -106,7 +108,7 @@ func (amz *Amazon) createFWRules() (ec2.SecurityGroup, error) {
     }
     _, e = amz.amzClient.AuthorizeSecurityGroup(g, ps)
     if e != nil {
-        return  ec2.SecurityGroup{}, e
+        return ec2.SecurityGroup{}, e
     }
     return g, nil
 }
@@ -129,7 +131,7 @@ func (amz *Amazon) waitForServer(inst ec2.Instance) (CloudServer, error) {
 
 func (amz *Amazon) init() error {
 
-    if amz.ApiKeyID == "" || amz.ApiAccessKey == "" || amz.Location == "" || amz.VMSize == "" {
+    if amz.ApiKeyID == "" || amz.ApiAccessKey == "" || amz.Location == "" || amz.VMSize == "" || len(amz.ServerNames) != amz.ServerCount {
         return errors.New("\n\nMissing Params Or No Matching AMI found...Check Docs...\n\n")
     }
 
@@ -173,7 +175,7 @@ func (amz *Amazon) ImportKey(puk string) (string, error) {
 
 func (amz Amazon)randSeq(n int) string {
     var letters = []rune("abcdefghijklmnopqrstuvwxyz")
-    rand.Seed( time.Now().UTC().UnixNano())
+    rand.Seed(time.Now().UTC().UnixNano())
     b := make([]rune, n)
     for i := range b {
         b[i] = letters[rand.Intn(len(letters))]
@@ -181,7 +183,7 @@ func (amz Amazon)randSeq(n int) string {
     return string(b)
 }
 
-func(amz Amazon) ExecSSHCmd(publicIP string, privateKey string, command string) string {
+func (amz Amazon) ExecSSHCmd(publicIP string, privateKey string, command string) string {
 
     utils.LogInfo("\nWaiting for server to start before adding ssh keys")
     e := utils.WaitForSSH(publicIP)
@@ -198,7 +200,7 @@ func(amz Amazon) ExecSSHCmd(publicIP string, privateKey string, command string) 
 
     c := &ssh.ClientConfig{
         User: "ec2-user",
-        Auth: []ssh.AuthMethod{ssh.PublicKeys(k),},
+        Auth: []ssh.AuthMethod{ssh.PublicKeys(k), },
     }
 
     cn, _ := ssh.Dial("tcp", publicIP+":22", c)

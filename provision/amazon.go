@@ -6,7 +6,9 @@ import (
     "errors"
     "github.com/CenturylinkLabs/kube-cluster-deploy/deploy"
     "fmt"
-    "encoding/base64")
+    "encoding/base64"
+    "strings"
+    "strconv")
 
 type Amazon struct {
 
@@ -44,12 +46,23 @@ func (amz *Amazon) ProvisionCluster(params Params) ([]deploy.CloudServer, error)
     c.AmiName = "RHEL-7.0_HVM_GA"
     c.AmiOwnerId = "309956199498"
     c.TCPOpenPorts = []int{8080, 4001, 7001, 10250}
+    for _, p := range strings.Split(os.Getenv("OPEN_TCP_PORTS"), ",") {
+        v, e := strconv.Atoi(p)
+        if e == nil {
+            c.TCPOpenPorts = append(c.TCPOpenPorts, v)
+        }
+    }
 
     kn, e := c.ImportKey(puk)
     if e != nil {
         return nil, e
     }
     c.SSHKeyName = kn
+
+    c.ServerNames = append(c.ServerNames, "Master")
+    for i := 0; i < params.MinionCount; i++ {
+        c.ServerNames = append(c.ServerNames, fmt.Sprintf("Minion-%d", i))
+    }
 
     servers, e := c.DeployVMs()
     if e != nil {
