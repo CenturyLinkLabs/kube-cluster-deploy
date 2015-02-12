@@ -30,12 +30,12 @@ func NewCenturylink() *Centurylink {
 }
 
 func (clc Centurylink) DeployVMs() ([]CloudServer, error) {
-	e := clc.initProvider()
-	if e != nil {
+	if e := clc.initProvider(); e != nil {
 		return nil, e
 	}
 
     s, e := clc.createServer()
+
     var servers []CloudServer
     servers = append(servers, s )
     return servers, e

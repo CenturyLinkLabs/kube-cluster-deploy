@@ -6,7 +6,7 @@ import "github.com/CenturylinkLabs/kube-cluster-deploy/deploy"
 // CloudProvider is used to deploy kubernetes cluster on any of the supported
 // cloud providers.
 type CloudProvider interface {
-	ProvisionCluster(params Params) ([]deploy.CloudServer, error)
+	ProvisionCluster() ([]deploy.CloudServer, error)
 }
 
 // New is used to instantiate a CloudProvider to use to provision the cluster.

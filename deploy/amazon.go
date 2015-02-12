@@ -23,6 +23,7 @@ type Amazon struct {
     AmiOwnerId string
     SSHKeyName string
     PrivateKey string
+    PublicKey string
     amzClient *ec2.EC2
     ServerCount int
     TCPOpenPorts   []int
@@ -31,17 +32,23 @@ type Amazon struct {
 
 func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
 
-    e := amz.init()
-    if e != nil {
+    var e error
+    if e = amz.init(); e != nil {
         return nil, e
     }
 
-    amz.AmiName, e = amz.getAmiID()
-
-    if amz.AmiName == "" || e != nil {
+    if amz.AmiName, e = amz.getAmiID(); amz.AmiName == "" || e != nil {
         return nil, errors.New("AMI Not found for provisioning. Cannot proceed.!!!")
     }
     utils.LogInfo(fmt.Sprintf("AMI Used: %s", amz.AmiName))
+
+    if  amz.SSHKeyName == "" && (amz.PublicKey != "" && amz.PrivateKey != "") {
+        if amz.SSHKeyName, e = amz.importKey(amz.PublicKey); e != nil {
+            return  nil, e
+        }
+    } else if amz.SSHKeyName == "" {
+        return nil, errors.New("Please pass ssk keyname or a Privat Key & Public Key to create vms.")
+    }
 
     sg, e := amz.createFWRules()
     if e != nil {
@@ -157,7 +164,7 @@ func (amz *Amazon) init() error {
 }
 
 
-func (amz *Amazon) ImportKey(puk string) (string, error) {
+func (amz *Amazon) importKey(puk string) (string, error) {
 
     e := amz.init()
     if e != nil {

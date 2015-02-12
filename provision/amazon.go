@@ -21,16 +21,20 @@ func NewAmazon() *Amazon {
     return cl
 }
 
-func (amz *Amazon) ProvisionCluster(params Params) ([]deploy.CloudServer, error) {
+func (amz *Amazon) ProvisionCluster() ([]deploy.CloudServer, error) {
 
     utils.LogInfo("\nProvisioning cluster in Amazon EC2")
 
+    snMaster := "Master"
+    snMinion := "Minion"
+
     apiID := os.Getenv("AWS_ACCESS_KEY_ID")
     apiK := os.Getenv("AWS_SECRET_ACCESS_KEY")
-    location := os.Getenv("REGION")
+    loc := os.Getenv("REGION")
     vmSize := os.Getenv("VM_SIZE")
+    cnt, e := strconv.Atoi(os.Getenv("MINION_COUNT"))
 
-    if apiID == "" || apiK == "" || location == "" || vmSize == "" {
+    if apiID == "" || apiK == "" || loc == "" || vmSize == "" {
         return nil, errors.New("\n\nMissing Params Or No Matching AMI found...Check Docs...\n\n")
     }
 
@@ -39,12 +43,15 @@ func (amz *Amazon) ProvisionCluster(params Params) ([]deploy.CloudServer, error)
     c := &deploy.Amazon{}
     c.ApiAccessKey = apiK
     c.ApiKeyID = apiID
-    c.Location = location
+    c.Location = loc
     c.PrivateKey = pk
-    c.ServerCount = params.MinionCount + 1
+    c.PublicKey = puk
+    c.ServerCount = cnt + 1
     c.VMSize = vmSize
+
     c.AmiName = "RHEL-7.0_HVM_GA"
     c.AmiOwnerId = "309956199498"
+
     c.TCPOpenPorts = []int{8080, 4001, 7001, 10250}
     for _, p := range strings.Split(os.Getenv("OPEN_TCP_PORTS"), ",") {
         v, e := strconv.Atoi(p)
@@ -53,35 +60,32 @@ func (amz *Amazon) ProvisionCluster(params Params) ([]deploy.CloudServer, error)
         }
     }
 
-    kn, e := c.ImportKey(puk)
-    if e != nil {
-        return nil, e
-    }
-    c.SSHKeyName = kn
-
-    c.ServerNames = append(c.ServerNames, "Master")
-    for i := 0; i < params.MinionCount; i++ {
-        c.ServerNames = append(c.ServerNames, fmt.Sprintf("Minion-%d", i))
+    c.ServerNames = append(c.ServerNames, snMaster)
+    for i := 0; i < c.ServerCount - 1 ; i++ {
+        c.ServerNames = append(c.ServerNames, fmt.Sprintf("%s-%d", snMinion, i))
     }
 
     servers, e := c.DeployVMs()
+
     if e != nil {
         return nil, e
     }
 
-    for i, s := range servers {
+    for _, s := range servers {
         s.PublicSSHKey = puk
-        if i > 0 {
+        if s.Name != snMaster {
             s.PrivateSSHKey = ""
+        } else {
+            cmd := fmt.Sprintf("echo -e \"%s\" >> ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa", s.PrivateSSHKey)
+            c.ExecSSHCmd(s.PublicIP, s.PrivateSSHKey, cmd)
         }
     }
 
-    cmd := fmt.Sprintf("echo -e \"%s\" >> ~/.ssh/id_rsa && chmod 400 ~/.ssh/id_rsa", servers[0].PrivateSSHKey)
-    c.ExecSSHCmd(servers[0].PublicIP, servers[0].PrivateSSHKey, cmd)
-
     utils.LogInfo("\nCluster Creating Complete...")
-    utils.SetKey("AMAZON_MASTER_KEY_NAME", kn)
+    utils.SetKey("AMAZON_MASTER_KEY_NAME", c.SSHKeyName)
     utils.SetKey("MASTER_PUBLIC_KEY", base64.StdEncoding.EncodeToString([]byte(puk)))
+    utils.SetKey("UBUNTU_LOGIN_USER","ubuntu")
+    utils.SetKey("RHEL_LOGIN_USER","ec2-user")
 
     return servers, nil
 }

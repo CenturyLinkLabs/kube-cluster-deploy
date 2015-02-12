@@ -1,6 +1,9 @@
 package utils
 
-import "net"
+import (
+    "net"
+    "encoding/json"
+    "io/ioutil")
 
 func WaitForSSH(publicIP string) error {
     for {
@@ -15,5 +18,17 @@ func WaitForSSH(publicIP string) error {
         break
     }
     return nil
+}
+
+func LoadJsonConfig() (map[string]string, error) {
+    var m map[string]string
+    c, e :=  ioutil.ReadFile("./config.json")
+    if e != nil {
+        return nil, e
+    }
+    if e = json.Unmarshal(c, &m); e != nil {
+        return nil, e
+    }
+    return m, nil
 }
 

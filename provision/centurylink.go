@@ -35,17 +35,19 @@ func NewCenturylink() *Centurylink {
 
 // ProvisionCluster is used to provision a cluster of RHEL7 VMs (1 Master +
 // n Minions).
-func (clc Centurylink) ProvisionCluster(params Params) ([]deploy.CloudServer, error) {
+func (clc Centurylink) ProvisionCluster() ([]deploy.CloudServer, error) {
 	utils.LogInfo("\nProvisioning Server Cluster in Centurylink")
-	utils.LogInfo("\nMinion Count: " + strconv.Itoa(params.MinionCount))
 
-	e := clc.initProvider()
+    cnt, e := strconv.Atoi(os.Getenv("MINION_COUNT"))
+	utils.LogInfo("\nMinion Count: " + strconv.Itoa(cnt))
+
+	e = clc.initProvider()
 	if e != nil {
 		return nil, e
 	}
 
 	var servers []deploy.CloudServer
-	for i := 0; i < params.MinionCount+1; i++ {
+	for i := 0; i < cnt+1; i++ {
 		pk := ""
 		if i == 0 {
 			utils.LogInfo("\nDeploying Kubernetes Master...")
@@ -86,6 +88,7 @@ func (clc *Centurylink) initProvider() error {
 	clc.cpu, _ = strconv.Atoi(os.Getenv("CPU"))
 	clc.memGb, _ = strconv.Atoi(os.Getenv("MEMORY_GB"))
 	ps := os.Getenv("OPEN_TCP_PORTS")
+
 	if ps != "" {
 		s := strings.Split(ps, ",")
 		for _, p := range s {

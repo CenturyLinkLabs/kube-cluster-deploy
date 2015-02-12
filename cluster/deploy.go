@@ -20,18 +20,16 @@ func main() {
 		}
 	}()
 
-    c, _ := strconv.Atoi(os.Getenv("MINION_COUNT"))
-
-	if c == 0 {
+    c, e := strconv.Atoi(os.Getenv("MINION_COUNT"))
+	if c == 0 || e != nil {
 		panic("\nPlease make sure you have at least one minion in the cluster.")
 	}
 
-	params := provision.Params{MinionCount: c}
-    p := "amazon"
+    cfg, e := utils.LoadJsonConfig()
 
+    p := cfg["provider"]
 	cp := provision.New(p)
-	s, e := cp.ProvisionCluster(params)
-
+	s, e := cp.ProvisionCluster()
 	if e != nil {
 		panic(e.Error())
 	}
@@ -52,10 +50,9 @@ func main() {
 		}
 	}
 
+    utils.SetKey("CLOUD_PROVIDER",p)
 	utils.SetKey("MASTER_PUBLIC_IP", mPuIP)
 	utils.SetKey("MASTER_PRIVATE_IP", mPrIP)
 	utils.SetKey("MASTER_PRIVATE_KEY", base64.StdEncoding.EncodeToString([]byte(mPK)))
 	utils.SetKey("MINION_IPS", strings.Join(miIP, ","))
-    utils.SetKey("UBUNTU_LOGIN_USER","ubuntu")
-    utils.SetKey("RHEL_LOGIN_USER","ec2-user")
 }
