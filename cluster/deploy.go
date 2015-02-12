@@ -13,12 +13,12 @@ import (
 func main() {
     fmt.Printf("Starting cluster deployment")
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-			os.Exit(1)
-		}
-	}()
+//	defer func() {
+//		if r := recover(); r != nil {
+//			fmt.Println(r)
+//			os.Exit(1)
+//		}
+//	}()
 
     c, e := strconv.Atoi(os.Getenv("MINION_COUNT"))
 	if c == 0 || e != nil {
@@ -29,6 +29,7 @@ func main() {
 
     p := cfg["provider"]
 	cp := provision.New(p)
+
 	s, e := cp.ProvisionCluster()
 	if e != nil {
 		panic(e.Error())

@@ -30,7 +30,8 @@ func NewCenturylink() *Centurylink {
 }
 
 func (clc Centurylink) DeployVMs() ([]CloudServer, error) {
-	if e := clc.initProvider(); e != nil {
+    e := clc.initProvider()
+	if e != nil {
 		return nil, e
 	}
 
@@ -73,7 +74,7 @@ func (clc *Centurylink) createServer() (CloudServer, error) {
 		Type:           "standard",
 	}
 
-	st, e := clc.clcClient.SaveEntity(&s)
+    st, e := clc.clcClient.SaveEntity(&s)
 	if e != nil {
 		return CloudServer{}, e
 	}

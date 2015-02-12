@@ -33,21 +33,24 @@ type Amazon struct {
 func (amz *Amazon)DeployVMs() ([]CloudServer, error) {
 
     var e error
-    if e = amz.init(); e != nil {
+    e = amz.init()
+    if e != nil {
         return nil, e
     }
 
-    if amz.AmiName, e = amz.getAmiID(); amz.AmiName == "" || e != nil {
+    amz.AmiName, e = amz.getAmiID()
+    if amz.AmiName == "" || e != nil {
         return nil, errors.New("AMI Not found for provisioning. Cannot proceed.!!!")
     }
     utils.LogInfo(fmt.Sprintf("AMI Used: %s", amz.AmiName))
 
     if  amz.SSHKeyName == "" && (amz.PublicKey != "" && amz.PrivateKey != "") {
-        if amz.SSHKeyName, e = amz.importKey(amz.PublicKey); e != nil {
+        amz.SSHKeyName, e = amz.importKey(amz.PublicKey)
+        if e != nil {
             return  nil, e
         }
     } else if amz.SSHKeyName == "" {
-        return nil, errors.New("Please pass ssk keyname or a Privat Key & Public Key to create vms.")
+        return nil, errors.New("Please pass ssh keyname or a Private Key & Public Key to create vms.")
     }
 
     sg, e := amz.createFWRules()
@@ -158,23 +161,23 @@ func (amz *Amazon) init() error {
     }
 
     amz.amzClient = ec2.New(auth, r)
-    amz.getAmiID()
 
     return nil
 }
 
 
 func (amz *Amazon) importKey(puk string) (string, error) {
+//    e := amz.init()
+//        if e != nil {
+//            return "", e
+//        }
 
-    e := amz.init()
-    if e != nil {
-        return "", e
-    }
 
     kn := "pmx-keypair-" + amz.randSeq(4)
-    _, e = amz.amzClient.ImportKeyPair(kn, puk)
+    _, e := amz.amzClient.ImportKeyPair(kn, puk)
 
     if e != nil {
+        panic(e)
         return "", e
     }
     return kn, nil

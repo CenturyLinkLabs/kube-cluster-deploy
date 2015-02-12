@@ -48,7 +48,6 @@ func (amz *Amazon) ProvisionCluster() ([]deploy.CloudServer, error) {
     c.PublicKey = puk
     c.ServerCount = cnt + 1
     c.VMSize = vmSize
-
     c.AmiName = "RHEL-7.0_HVM_GA"
     c.AmiOwnerId = "309956199498"
 
@@ -82,7 +81,7 @@ func (amz *Amazon) ProvisionCluster() ([]deploy.CloudServer, error) {
     }
 
     utils.LogInfo("\nCluster Creating Complete...")
-    utils.SetKey("AMAZON_MASTER_KEY_NAME", c.SSHKeyName)
+    utils.SetKey("AMAZON_SSH_KEY_NAME", c.SSHKeyName)
     utils.SetKey("MASTER_PUBLIC_KEY", base64.StdEncoding.EncodeToString([]byte(puk)))
     utils.SetKey("UBUNTU_LOGIN_USER","ubuntu")
     utils.SetKey("RHEL_LOGIN_USER","ec2-user")
