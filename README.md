@@ -1,4 +1,7 @@
 ## Kubernetes Cluster Deployment on CenturyLink Cloud
+
+[![](https://badge.imagelayers.io/centurylink/kube-cluster-deploy.svg)](https://imagelayers.io/?images=centurylink/kube-cluster-deploy:latest 'Get your own badge on imagelayers.io')
+
 This image is for use in [Panamax](http://panamax.io) to create a cluster in CLC using the [Dray](https://registry.hub.docker.com/u/centurylink/dray/) tool. It takes environment variables related to one's CLC account and creates a cluster based on your sepecifications/values you pass. It DOES NOT install kubernetes if ran standalone. It only creates the nodes in order to then install kubernetes. The output of the ran container are the IPs of the created nodes: Master and any Minions specified.
 
 Environment Variables include:
