@@ -1,3 +1,7 @@
+## NOTE
+
+This repo is no longer being maintained. Users are welcome to fork it, but we make no warranty of its functionality.
+
 ## Kubernetes Cluster Deployment on CenturyLink Cloud
 
 [![](https://badge.imagelayers.io/centurylink/kube-cluster-deploy.svg)](https://imagelayers.io/?images=centurylink/kube-cluster-deploy:latest 'Get your own badge on imagelayers.io')
